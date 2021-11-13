@@ -91,4 +91,10 @@ li.el-submenu {
     height: 178px;
     display: block;
   }
-
+  .el-radio-group{
+      display: flex;
+  }
+  .el-radio{
+      margin: 0 10px;
+      display: flex;
+  }
