@@ -12,6 +12,13 @@ import {addressSetMapCenter} from './location';
 import {ampaSetMarker,amapClearMarker} from './marker';
 export default {
   name: "Map",
+  props:{
+    // 用于控制是否为地图添加点击设置坐标点覆盖物，并且返回经纬度，默认是开启的
+    click_get_lnglat:{
+      type: Boolean,
+      default: true,
+    }
+  },
   data() {
     // const self = this;
     return {
@@ -27,13 +34,27 @@ export default {
     // const _this = this;
     //  加载高德地图的api
     lazyAMapApiLoaderInstance.load().then(() => {
-      console.log('地图加载成功')
-      // your code ...
+      // 创建地图
+      this.createMap()
+      // 点击设置覆盖物
+      if(this.click_get_lnglat){this.clickSetMapMarker()}
+    })
+  },
+  methods: {
+    // 创建地图
+    createMap(){
       this.map = new AMap.Map("amapContainer", {
         center: new AMap.LngLat(117.117148, 39.062564),
         zoom: this.zoom//初始化地图层级
       });
-      this.map.on('click', (e) =>{
+    },
+    // 销毁地图
+    destroyMap(){
+        this.map && this.map.destroy();
+    },
+    // 点击设置覆盖物
+    clickSetMapMarker(){
+            this.map.on('click', (e) =>{
         const lnglat = getLngLat(e);
         // 更新经纬度
         this.lnglat = lnglat;
@@ -54,16 +75,14 @@ export default {
           }
         })
       });
-    })
-  },
-  methods: {
+    },
     // 设置地图中心点
     setMapCenter(value){
       addressSetMapCenter(value,this.map)
     },
     // 设置点覆盖物
-    setMapMarker(){
-      ampaSetMarker(this.lnglat,this.map)
+    setMapMarker(lnglat){
+      ampaSetMarker(lnglat || this.lnglat,this.map)
     },
     // 清除点覆盖物
     clearMapMarker(){

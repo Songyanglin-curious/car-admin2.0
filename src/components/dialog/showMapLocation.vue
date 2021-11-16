@@ -1,57 +1,51 @@
 <template>
-  <!--dialog 弹窗
-    子组件接收父组件的数据，是通过属性接收
-  -->
-  <el-dialog
-    :title="data.parkingName"
-    :visible.sync="dialogVisible"
-    class="cars-dialog-center"
-    @close="close"
-    @opened="opened"
-    :close-on-click-modal="false"
-  >
-    <div style="height: 500px;"><AMap ref="aMap" /></div>
+  <el-dialog :title="this.data.parkingName" :visible.sync="dialogVisible" width="800px" @close="close" @opened="opened">
+    <div style="height: 500px">
+      <Amap ref="amap" :click_get_lnglat="false"></Amap>
+    </div>
+    <el-button @click="test()"></el-button>
   </el-dialog>
 </template>
 
 <script>
-// AMAP
-import AMap from "@/views/amap";
+import Amap from "@/views/amap"
 export default {
-  name: "",
-  components: { AMap },
+  name: 'showMapLocation',
   props: {
     flagVisible: {
       type: Boolean,
       default: false
     },
     data: {
-        type: Object,
-        default: () => {}
+      type: Object,
+      default: ()=>{}
     }
   },
+  components: {Amap},
   data() {
     return {
-        // 弹窗显示/关闭标记
-        dialogVisible: false
+      dialogVisible: false
     };
   },
   methods: {
     opened(){
-      this.$refs.aMap.mapCreate();
-      // 调DOM元素的方法时，要确保DOM元素已被加载完成
-      this.$nextTick(() => { // DOM元素渲染完成后执行
-        const splitLnglat = this.data.lnglat.split(",");
+      this.$refs.amap.createMap()
+      this.$nextTick(() => {
+        const split_lnglat = this.data.lnglat.split(',');
         const lnglat = {
-            lng: splitLnglat[0],
-            lat: splitLnglat[1]
-        }
-        this.$refs.aMap.setMarker(lnglat);
-      })
+          lng: split_lnglat[0],
+          lat: split_lnglat[1],
+        };
+        if(lnglat){this.$refs.amap.setMapMarker(lnglat)};
+      });
     },
-    close() {
-        this.$refs.aMap.mapDestroy();
-        this.$emit("update:flagVisible", false); // {}
+    close(){
+      // 回调修改map_show
+      this.$emit('update:flagVisible',false)
+      this.$refs.amap.destroyMap()
+    },
+    test(){
+      console.log(this.data)
     }
   },
   watch: {
@@ -59,16 +53,18 @@ export default {
       handler(newValue, oldValue) {
         this.dialogVisible = newValue;
       }
-    },
-    // parking_data: {
-    //     handler(newValue, oldValue) {
-    //         console.log('newValuenewValuenewValuenewValue')
-    //         console.log(newValue)
-    //         this.data = newValue
-    //     }
-    // }
+    }
   }
 };
+/**
+ * 目的：打开关闭弹窗 显示地图 在停车场坐标处打上坐标 地图中心定位到停车场坐标处
+ * 实现思路：
+ * 1、打开关闭弹窗  打开时传入信号true弹窗打开，关闭时将父组件修改为false
+ * 2、显示地图： 引入地图组件
+ * 3、停车场坐标处打点：传入该停车场经纬度，调用地图组件的打点函数
+ * 4、地图中心定位到停车场坐标处: 添加覆盖物的同时添加map.setFitView()函数
+ */
 </script>
-<style lang='scss' scoped>
+
+<style scoped lang="scss">
 </style>

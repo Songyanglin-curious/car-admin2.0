@@ -10,6 +10,7 @@ export function ampaSetMarker(lnglat,map){
       position: [lng,lat]
   });
   map.add(marker);
+  map.setFitView();
 }
 export function amapClearMarker(map){
   if(marker){

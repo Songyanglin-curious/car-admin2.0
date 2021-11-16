@@ -12,16 +12,16 @@
           <el-input v-model="form_data.address" placeholder="请选输入详细地址"></el-input>
         </el-form-item>
         <el-form-item label="类型" prop="type">
-           <el-radio-group v-model.number="form_data.type">
-              <el-radio v-for="item in type" :key="item.id" :label="item.value">{{item.label}}</el-radio>
+           <el-radio-group v-model="form_data.type">
+              <el-radio v-for="item in type" :key="item.value" :label="item.value">{{item.label}}</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="可停放车辆" prop="carsNumber">
-          <el-input type="number" v-model.number="form_data.carsNumber" placeholder="请输入数字"></el-input>
+          <el-input type="number" v-model="form_data.carsNumber" placeholder="请输入数字"></el-input>
         </el-form-item>
         <el-form-item label="禁启用" prop="status">
           <el-radio-group v-model="form_data.status">
-            <el-radio v-for="item in status" :key="item.id" :label="item.value">{{item.label}}</el-radio>
+            <el-radio v-for="item in status" :key="item.value" :label="item.value">{{item.label}}</el-radio>
 
           </el-radio-group>
         </el-form-item>
@@ -44,12 +44,8 @@
 // 引入地图视图
 import Amap from "../amap";
 import CityArea from "@c/common/cityArea";
-import {ParkingAdd} from "@/api/parking"
+import {ParkingAdd,ParkingEdit} from "@/api/parking"
 export default {
-  
-  props: {
-
-  },
   components: {
     Amap,CityArea
   },
@@ -59,15 +55,13 @@ export default {
         parkingName: '', //停车场名称
         area: '',        //省市区
         address: '',    //详细地址
-        type: '',        //停车场类型（1：室内；2：室外）
+        type: 2,        //停车场类型（1：室内；2：室外）
         carsNumber: '',  //最多可停放数量
-        status: '',  //禁启用（false：禁用；true：启用）
+        status: false,  //禁启用（false：禁用；true：启用）
         lnglat: '',     //经纬度
       },
-      // 提交按钮状态
-      button_loading: false,
-      type: this.$store.state.config.radio_disabled,
-      status: this.$store.state.config.parking_type,
+      type: this.$store.state.config.parking_type,
+      status: this.$store.state.config.radio_disabled,
       form_rules:{
         parkingName:[
           {required:true,message: '请输入停车场名称', trigger: 'blur' }
@@ -91,9 +85,74 @@ export default {
           {required:true,message: '请点击地图选择停车场在地图上的位置', trigger: 'blur' }
         ],
       },
+      // 用于判断是编辑还是添加功能
+      id: this.$route.params.id,
+      params_data: this.$route.params,
+      // 提交按钮状态
+      button_loading: false,
     };
   },
   methods: {
+    // 提交按钮
+    onSubmit() {
+      
+      // 更改按钮为加载状态
+      this.button_loading = true
+      this.$refs.parkingForm.validate((valid) => {
+        if (valid) {
+          
+          // 判断调用编辑还是添加接口
+          this.id? this.editParking() : this.addParking()
+        } else {
+          console.log('error submit!!');
+          return false;
+        }
+      })
+    },
+    // 新增停车场api
+    addParking(){
+      
+      ParkingAdd(this.form_data).then(response => {
+        this.$message({
+            type: "success",
+            message: response.message
+        })
+        this.button_loading = false;
+        this.reset('parkingForm')
+      }).catch(error => {
+          console.log(error)
+          this.button_loading = false;
+      })
+    },
+    // 编辑api接口
+    editParking(){
+      let requestData = this.form_data
+      requestData.id = this.id
+      ParkingEdit(requestData).then(response => {
+        this.$message({
+            type: "success",
+            message: response.message
+        })
+        this.button_loading = false;
+        this.reset('parkingForm')
+        this.$router.push({name: "ParkingIndex"})
+      }).catch(error => {
+        console.log(error)
+        this.button_loading = false;
+      })
+    },
+    // 重置
+    reset(formName){
+      // 重置表单到默认状态
+       this.$refs[formName].resetFields();
+      // 清除点状覆盖物
+      this.$refs.amap.clearMapMarker();
+      // 清除省市县组件的数据
+      this.$refs.cityArea.clearData();
+    },
+    /**
+     * 用于回调的，通过callback传出的函数名和参数调用下面的回调函数
+     */
     // 调用回调函数
     callbackComponent(params){
       if(params.function){this[params.function](params.data)}
@@ -106,44 +165,17 @@ export default {
     setMapCenter(data){
       this.$refs.amap.setMapCenter(data.address)
     },
-    // 提交按钮
-    onSubmit() {
-      // 更改按钮为加载状态
-      this.button_loading = true
-      this.$refs.parkingForm.validate((valid) => {
-        if (valid) {
-          this.addParking()
-        } else {
-          console.log('error submit!!');
-          return false;
-        }
-      })
-    },
-    // 重置
-    reset(formName){
-      // 重置表单到默认状态
-       this.$refs[formName].resetFields();
-      // 清除点状覆盖物
-      this.$refs.amap.clearMapMarker();
-      // 清除省市县组件的数据
-      this.$refs.cityArea.clearData();
-    },
-    // 新增停车场api
-    addParking(){
-      ParkingAdd(this.form_data).then(response => {
-        this.$message({
-            type: "success",
-            message: response.message
-        })
-        this.button_loading = false;
-        this.reset('parkingForm')
-        
-      }).catch(error => {
-          console.log(error)
-          this.button_loading = false;
-      })
-    }
   },
+  created(){
+    // 当是从编辑按钮跳转过来，将传入的数据渲染
+    if(this.id){
+      console.log(this.params_data)
+      for(let key in this.form_data){
+        this.form_data[key] = this.params_data[key]
+      }
+    }
+    
+  }
 };
 </script>
 

@@ -14,14 +14,19 @@ components: {
     CityArea
   },
  //使用组件
- <CityArea :cityAreaValue.sync="form_data.area"></CityArea>
+  <CityArea ref='cityArea' :cityAreaValue.sync="form_data.area" :mapLocation="true" @callback="callbackComponent"></CityArea>
+        </el-form-item>
  /*
  form_data.area 是组件返回给父组件的数据，就是自己选择的数据的数据
  组件是单向数据流，父组件向子组件传值，但是子组件不能修改父组件的值 			.sync可以修改父组件的值，但只能是简单数据类型
  */
 ```
 
-传入参数： 无
+传入参数： 
+
+| 参数名      | 类型    | 备注                                         |
+| ----------- | ------- | -------------------------------------------- |
+| mapLocation | Boolean | 是否需要返回中文位置信息，和callback结合使用 |
 
 传出参数：
 
@@ -29,9 +34,10 @@ components: {
 form_data.area（自己定义接受数据的）
 ```
 
-| 参数名         | 类型   | 备注                     |
-| -------------- | ------ | ------------------------ |
-| form_data.area | String | 绑定到你自己定义的数据里 |
+| 参数名         | 类型     | 备注                                                         |
+| -------------- | -------- | ------------------------------------------------------------ |
+| form_data.area | String   | 绑定到你自己定义的数据里                                     |
+| callback       | function | 回调函数，需要在父组件设置好回调的函数，用callback传出的函数名和参数调用 |
 
 ## 封装思路
 
